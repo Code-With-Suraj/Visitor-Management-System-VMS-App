@@ -339,21 +339,21 @@
     var tabRegister = document.getElementById('tabRegister');
     var tabDashboard = document.getElementById('tabDashboard');
     if (tabRegister && tabDashboard) {
-      tabRegister.addEventListener('click', function () { switchTab('register'); });
-      tabDashboard.addEventListener('click', function () { switchTab('dashboard'); });
+      tabRegister.addEventListener('click', function (e) { e.preventDefault(); switchTab('register'); });
+      tabDashboard.addEventListener('click', function (e) { e.preventDefault(); switchTab('dashboard'); });
     }
 
     // Remarks modal confirmation
     var btnCancelRemarks = document.getElementById('btnCancelRemarks');
-    if (btnCancelRemarks) btnCancelRemarks.addEventListener('click', closeRemarksModal);
+    if (btnCancelRemarks) btnCancelRemarks.addEventListener('click', function (e) { e.preventDefault(); closeRemarksModal(); });
     var btnConfirmCheckout = document.getElementById('btnConfirmCheckout');
-    if (btnConfirmCheckout) btnConfirmCheckout.addEventListener('click', handleConfirmCheckout);
+    if (btnConfirmCheckout) btnConfirmCheckout.addEventListener('click', function (e) { e.preventDefault(); handleConfirmCheckout(); });
 
     // QR Code modal
     var btnShowQR = document.getElementById('btnShowQR');
-    if (btnShowQR) btnShowQR.addEventListener('click', showQRModal);
+    if (btnShowQR) btnShowQR.addEventListener('click', function (e) { e.preventDefault(); showQRModal(); });
     var btnCloseQR = document.getElementById('btnCloseQR');
-    if (btnCloseQR) btnCloseQR.addEventListener('click', closeQRModal);
+    if (btnCloseQR) btnCloseQR.addEventListener('click', function (e) { e.preventDefault(); closeQRModal(); });
     var qrOverlay = document.getElementById('qrCodeModal');
     if (qrOverlay) {
       qrOverlay.addEventListener('click', function (e) {
@@ -379,9 +379,9 @@
 
     // Password modal events
     var btnCancelPassword = document.getElementById('btnCancelPassword');
-    if (btnCancelPassword) btnCancelPassword.addEventListener('click', closePasswordModal);
+    if (btnCancelPassword) btnCancelPassword.addEventListener('click', function (e) { e.preventDefault(); closePasswordModal(); });
     var btnConfirmPassword = document.getElementById('btnConfirmPassword');
-    if (btnConfirmPassword) btnConfirmPassword.addEventListener('click', handleConfirmPassword);
+    if (btnConfirmPassword) btnConfirmPassword.addEventListener('click', function (e) { e.preventDefault(); handleConfirmPassword(); });
     var passwordInput = document.getElementById('dashboardPasswordInput');
     if (passwordInput) {
       passwordInput.addEventListener('keypress', function (e) {
@@ -1342,11 +1342,11 @@
           + '━━━━━━━━━━━━━━━━━━━━━\n\n'
           + '_Powered by VisitorSarthi_';
 
-        var waUrl = hostMobile ? 'https://wa.me/91' + hostMobile + '?text=' + encodeURIComponent(message) : '#';
+        var waUrl = hostMobile ? 'https://wa.me/91' + hostMobile + '?text=' + encodeURIComponent(message) : 'javascript:void(0)';
         var waTarget = hostMobile ? 'target="_blank" rel="noopener"' : '';
         var waClass = hostMobile ? 'btn btn-whatsapp' : 'btn btn-whatsapp disabled';
 
-        actionsHtml = '<a href="' + waUrl + '" ' + waTarget + ' class="' + waClass + '" style="font-size:0.75rem !important; padding:6px 12px !important; border-radius:var(--radius-sm); text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-weight:600;">💬 Notify</a>' +
+        actionsHtml = '<a href="' + waUrl + '" ' + waTarget + ' class="' + waClass + '" onclick="event.stopPropagation();" style="font-size:0.75rem !important; padding:6px 12px !important; border-radius:var(--radius-sm); text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-weight:600;">💬 Notify</a>' +
           '<button type="button" class="btn btn-approve" data-id="' + visitor.visitorId + '">Approve</button>' +
           '<button type="button" class="btn btn-reject" data-id="' + visitor.visitorId + '">Reject</button>';
       } else if (statusLower === 'approved') {
@@ -1437,7 +1437,9 @@
 
         // Bind events on buttons
         paginationContainer.querySelectorAll('.pagination-btn').forEach(function (btn) {
-          btn.addEventListener('click', function () {
+          btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
             var targetPage = parseInt(this.getAttribute('data-page'), 10);
             if (targetPage && targetPage >= 1 && targetPage <= totalPages && targetPage !== state.currentPage) {
               state.currentPage = targetPage;
@@ -1454,6 +1456,8 @@
 
     listContainer.querySelectorAll('.btn-approve').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
         var clickedBtn = e.target.closest('button');
         if (clickedBtn) {
           updateStatus(clickedBtn.getAttribute('data-id'), 'Approved', null, clickedBtn);
@@ -1462,6 +1466,8 @@
     });
     listContainer.querySelectorAll('.btn-reject').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
         var clickedBtn = e.target.closest('button');
         if (clickedBtn) {
           updateStatus(clickedBtn.getAttribute('data-id'), 'Rejected', null, clickedBtn);
@@ -1470,6 +1476,8 @@
     });
     listContainer.querySelectorAll('.btn-checkin').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
         var clickedBtn = e.target.closest('button');
         if (clickedBtn) {
           updateStatus(clickedBtn.getAttribute('data-id'), 'Inside', null, clickedBtn);
@@ -1478,6 +1486,8 @@
     });
     listContainer.querySelectorAll('.btn-checkout').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
         var clickedBtn = e.target.closest('button');
         if (clickedBtn) {
           state.pendingCheckoutId = clickedBtn.getAttribute('data-id');
@@ -1487,6 +1497,8 @@
     });
     listContainer.querySelectorAll('.btn-view-history').forEach(function (el) {
       el.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
         var parent = e.target.closest('.btn-view-history');
         if (parent) {
           viewHistory(parent.getAttribute('data-mobile'));
