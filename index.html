@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="description" content="Visitor Management System — Secure, fast, and professional visitor check-in for your organization.">
-  <title>Visitor Management System</title>
+  <meta name="description" content="VisitorSarthi — Secure, fast, and professional visitor check-in for your organization.">
+  <title>VisitorSarthi — Smart Visitor Management</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -15,7 +15,7 @@
   <!-- ===== Page Loader ===== -->
   <div class="page-loader" id="pageLoader">
     <div class="loader-ring"></div>
-    <p>Loading Visitor Management System...</p>
+    <p>Loading VisitorSarthi...</p>
   </div>
 
   <!-- ===== Toast Container ===== -->
@@ -26,10 +26,22 @@
 
     <!-- Header -->
     <header class="app-header">
-      <div class="app-logo">🏢</div>
-      <h1>Visitor Management</h1>
-      <p>Secure check-in for your organization</p>
+      <div class="app-logo">🤝</div>
+      <h1>VisitorSarthi</h1>
+      <p>Smart Visitor Management Console</p>
+      
+      <!-- Network Badge -->
+      <div class="network-badge online" id="networkBadge">
+        <span class="badge-dot"></span>
+        <span class="badge-text">Online</span>
+      </div>
     </header>
+
+    <!-- Tab Navigation -->
+    <nav class="tab-navigation">
+      <button type="button" id="tabRegister" class="tab-button active">➕ Visitor Registration</button>
+      <button type="button" id="tabDashboard" class="tab-button">📊 Reception Dashboard</button>
+    </nav>
 
     <!-- ===== Registration Form ===== -->
     <div id="formSection">
@@ -42,6 +54,23 @@
             <div class="card-title">
               <span class="icon blue">👤</span>
               Personal Details
+            </div>
+
+            <!-- Repeat Visitor Banner (Hidden by default) -->
+            <div id="repeatVisitorBanner" class="repeat-visitor-banner hidden">
+              <div class="repeat-visitor-thumb">
+                <img id="repeatVisitorImage" src="" alt="Old visitor photo">
+              </div>
+              <div class="repeat-visitor-info">
+                <strong>Welcome back, <span id="repeatVisitorName">Visitor</span>!</strong>
+                <p>Total Visits: <span id="repeatTotalVisits">0</span> | Last: <span id="repeatLastVisit">Never</span></p>
+                <p>Visited: <span id="repeatLastHost">None</span></p>
+                <p>Avg Stay: <span id="repeatAvgStay">N/A</span></p>
+                <p id="repeatRemarksWrapper" class="hidden" style="color: var(--warning); margin-top: 2px;">Remarks: <span id="repeatRemarks">None</span></p>
+                <button type="button" id="btnUseOldPhoto" class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.75rem; margin-top: 6px; height: auto;">
+                  Use Previous Photo
+                </button>
+              </div>
             </div>
 
             <div class="form-group">
@@ -122,9 +151,17 @@
                 <img id="capturedPreview" class="hidden" alt="Captured visitor photo">
               </div>
 
+              <div class="form-group camera-select-group hidden" id="cameraSelectGroup" style="margin-bottom:12px; text-align:left;">
+                <label for="cameraSource">Camera Source</label>
+                <select id="cameraSource" class="form-control"></select>
+              </div>
+
               <div class="camera-controls">
                 <button type="button" id="btnStartCamera" class="btn btn-secondary">
                   📷 Open Camera
+                </button>
+                <button type="button" id="btnSwitchCamera" class="btn btn-secondary hidden">
+                  🔄 Switch Camera
                 </button>
                 <button type="button" id="btnCapture" class="btn btn-primary hidden">
                   📸 Capture
@@ -134,6 +171,51 @@
                 </button>
               </div>
               <div class="field-error" id="cameraError" style="text-align:center;margin-top:8px;"></div>
+            </div>
+          </section>
+
+          <!-- ID Card Capture Card (Optional) -->
+          <section class="card form-section">
+            <div class="card-title">
+              <span class="icon cyan">🪪</span>
+              ID Card Capture (Optional)
+            </div>
+            <div class="form-group">
+              <label for="idCardType">ID Card Type</label>
+              <select id="idCardType" class="form-control">
+                <option value="">-- No ID Captured --</option>
+                <option value="Aadhaar">Aadhaar Card</option>
+                <option value="PAN">PAN Card</option>
+                <option value="DL">Driving License</option>
+                <option value="Passport">Passport</option>
+              </select>
+            </div>
+            <div class="camera-section id-card-section hidden" id="idCardSection">
+              <div class="camera-viewport" id="idCardViewport">
+                <div class="hud-corner top-left"></div>
+                <div class="hud-corner top-right"></div>
+                <div class="hud-corner bottom-left"></div>
+                <div class="hud-corner bottom-right"></div>
+                
+                <div class="placeholder" id="idCardPlaceholder">
+                  <span class="cam-icon">🪪</span>
+                  <span>Tap "Start ID Camera" to capture</span>
+                </div>
+                <video id="idCardVideo" class="hidden" autoplay playsinline muted></video>
+                <img id="idCardPreview" class="hidden" alt="ID card preview">
+              </div>
+              <div class="camera-controls">
+                <button type="button" id="btnStartIdCamera" class="btn btn-secondary">
+                  📷 Start ID Camera
+                </button>
+                <button type="button" id="btnCaptureId" class="btn btn-primary hidden">
+                  📸 Capture ID
+                </button>
+                <button type="button" id="btnRetakeId" class="btn btn-secondary hidden">
+                  🔄 Retake ID
+                </button>
+              </div>
+              <div class="field-error" id="idCardCameraError" style="text-align:center;margin-top:8px;"></div>
             </div>
           </section>
         </div>
@@ -150,6 +232,48 @@
     </div>
     <!-- /formSection -->
 
+    <!-- ===== Dashboard Section ===== -->
+    <div id="dashboardSection" class="hidden">
+      <!-- Stats Dashboard Grid -->
+      <div class="stats-grid">
+        <div class="stat-card blue">
+          <div class="stat-number" id="statToday">0</div>
+          <div class="stat-label">Today's Visits</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-number" id="statInside">0</div>
+          <div class="stat-label">Inside</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-number" id="statExpected">0</div>
+          <div class="stat-label">Expected</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-number" id="statCheckedOut">0</div>
+          <div class="stat-label">Checked Out</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-number" id="statRejected">0</div>
+          <div class="stat-label">Rejected</div>
+        </div>
+      </div>
+
+      <!-- Dashboard Toolbar -->
+      <div class="dashboard-actions">
+        <h2 style="font-size: 1.25rem;">Live Visitor Queue</h2>
+        <div class="dashboard-search">
+          <input type="text" id="dashboardSearchInput" class="form-control" placeholder="Search by name/mobile/ID...">
+        </div>
+      </div>
+
+      <!-- Live Queue List -->
+      <div class="visitor-list" id="dashboardVisitorList">
+        <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+          Loading live dashboard data...
+        </div>
+      </div>
+    </div>
+
     <!-- ===== Success Screen ===== -->
     <div class="success-screen" id="successScreen">
       <!-- Success Animation Section -->
@@ -161,7 +285,7 @@
       </div>
 
       <h2 style="font-size: 1.75rem; color: var(--success); margin-bottom: 8px;">Registration Successful!</h2>
-      <p style="color: var(--text-secondary); margin-bottom: 24px;">Your check-in has been recorded. Please keep your digital badge visible.</p>
+      <p style="color: var(--text-secondary); margin-bottom: 24px;">Your check-in registration has been submitted. Please wait for host approval.</p>
 
       <!-- High-Tech Visitor Badge -->
       <div class="visitor-badge-card">
@@ -174,7 +298,7 @@
             <div class="badge-id" id="successVisitorId">VIS-XXXXXXXX-XXXX</div>
           </div>
           <!-- Verified stamp -->
-          <div class="verified-stamp">VERIFIED</div>
+          <div class="verified-stamp" id="badgeStatusStamp">WAITING APPROVAL</div>
         </div>
 
         <div class="badge-divider"></div>
@@ -185,7 +309,7 @@
           </div>
           <div class="badge-info">
             <div class="badge-name" id="successVisitorNameDisplay">Visitor Name</div>
-            <div class="badge-sub">GUEST OF SECURECHECK AI</div>
+            <div class="badge-sub" id="badgeSubtitle">GUEST OF VISITORSARTHI</div>
           </div>
         </div>
       </div>
@@ -203,7 +327,7 @@
         <div class="success-details-card">
           <div class="success-details-icon">⏰</div>
           <div class="success-details-info">
-            <div class="success-details-label">Check-in Time</div>
+            <div class="success-details-label">Submission Time</div>
             <div class="success-details-value" id="successTime">—</div>
           </div>
         </div>
@@ -222,11 +346,71 @@
 
     <!-- Footer -->
     <footer class="footer">
-      <p>Powered by Visitor Management System &bull; &copy; 2026</p>
+      <p>Powered by VisitorSarthi &bull; &copy; 2026</p>
     </footer>
 
   </div>
   <!-- /app-container -->
+
+  <!-- ===== Remarks Modal (Checkout) ===== -->
+  <div class="modal-overlay hidden" id="remarksModal">
+    <div class="modal-container">
+      <div class="modal-header">Check-out Remarks</div>
+      <div class="form-group">
+        <label for="checkoutRemarks">Remarks / Notes</label>
+        <textarea id="checkoutRemarks" class="form-control" placeholder="Enter visit remarks (optional)" maxlength="200" rows="3"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btnCancelRemarks" class="btn btn-secondary">Cancel</button>
+        <button type="button" id="btnConfirmCheckout" class="btn btn-primary">Check Out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Visitor History Drawer ===== -->
+  <div class="drawer-overlay hidden" id="historyDrawerOverlay"></div>
+  <div class="drawer-container hidden" id="historyDrawer">
+    <div class="drawer-header">
+      <div class="drawer-title">Visitor Profile & History</div>
+      <button type="button" class="drawer-close" id="btnHistoryClose">&times;</button>
+    </div>
+    <div class="drawer-body">
+      <!-- Profile Details -->
+      <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 20px;">
+        <div class="badge-photo-wrapper" style="width: 72px; height: 72px;">
+          <img id="historyProfilePhoto" src="" alt="Visitor Profile Photo">
+        </div>
+        <div>
+          <h3 id="historyProfileName" style="font-size: 1.1rem; margin-bottom: 4px; color: var(--text-primary);">Name</h3>
+          <p id="historyProfileMobile" style="font-family: var(--font-mono); font-size: 0.8125rem; color: var(--text-secondary);">Mobile</p>
+          <p id="historyProfileCompany" style="font-size: 0.8125rem; color: var(--text-secondary);">Company</p>
+        </div>
+      </div>
+
+      <!-- Quick Metrics -->
+      <div class="history-stat-box">
+        <div class="history-stat-item">
+          <div class="history-stat-label">Total Visits</div>
+          <div class="history-stat-value" id="historyStatTotal">0</div>
+        </div>
+        <div class="history-stat-item">
+          <div class="history-stat-label">Avg Stay</div>
+          <div class="history-stat-value" id="historyStatAvg">N/A</div>
+        </div>
+        <div class="history-stat-item">
+          <div class="history-stat-label">Aadhaar 4</div>
+          <div class="history-stat-value" id="historyStatAadhaar">0000</div>
+        </div>
+      </div>
+
+      <!-- Timeline Title -->
+      <h4 style="font-size: 0.875rem; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 6px;">Visit Logs</h4>
+      <!-- Timeline list -->
+      <div class="history-timeline" id="historyTimeline">
+        <!-- Timeline items injected here -->
+      </div>
+    </div>
+  </div>
 
   <script src="script.js"></script>
 </body>
