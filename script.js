@@ -10,7 +10,7 @@
   /* ==========================================================
      CONFIGURATION
      ========================================================== */
-  var API_URL = 'https://script.google.com/macros/s/AKfycby2XFgGV9KqdZZZdCxhdyM75V_U65hu34qfuEZAt0ujWAP9Xy0X9FNMvWfbhvak4_4w/exec';
+  var API_URL = 'https://script.google.com/macros/s/AKfycbyBgjHk04NPHQSO9CjaOUbhUXvJPnw9x5L_4vTR4700FMNgEvpTDY6j0hZlujvOpKaz/exec';
 
   /* ---------- State ---------- */
   var state = {
@@ -256,23 +256,23 @@
           records: cleanRecords
         })
       })
-      .then(function (res) { return res.json(); })
-      .then(function (json) {
-        if (json.success) {
-          showToast('Synchronized successfully!', 'success');
-          records.forEach(function (r) {
-            deleteOfflineRecord(r.id);
-          });
-          if (state.currentTab === 'dashboard') {
-            loadDashboardData();
+        .then(function (res) { return res.json(); })
+        .then(function (json) {
+          if (json.success) {
+            showToast('Synchronized successfully!', 'success');
+            records.forEach(function (r) {
+              deleteOfflineRecord(r.id);
+            });
+            if (state.currentTab === 'dashboard') {
+              loadDashboardData();
+            }
+          } else {
+            showToast('Sync failed: ' + json.message, 'error');
           }
-        } else {
-          showToast('Sync failed: ' + json.message, 'error');
-        }
-      })
-      .catch(function (err) {
-        console.error('Sync error:', err);
-      });
+        })
+        .catch(function (err) {
+          console.error('Sync error:', err);
+        });
     });
   }
 
@@ -520,26 +520,26 @@
       method: 'GET',
       redirect: 'follow'
     })
-    .then(function (res) { return res.json(); })
-    .then(function (json) {
-      if (json.success && json.data && json.data.visitor) {
-        var visitor = json.data.visitor;
-        var history = json.data.history || {};
+      .then(function (res) { return res.json(); })
+      .then(function (json) {
+        if (json.success && json.data && json.data.visitor) {
+          var visitor = json.data.visitor;
+          var history = json.data.history || {};
 
-        dom.visitorName.value = visitor.name || '';
-        dom.company.value = visitor.company || '';
-        dom.aadhaarLast4.value = visitor.aadhaarLast4 || '';
+          dom.visitorName.value = visitor.name || '';
+          dom.company.value = visitor.company || '';
+          dom.aadhaarLast4.value = visitor.aadhaarLast4 || '';
 
-        state.oldVisitorPhoto = visitor.photo || null;
-        showRepeatVisitorBanner(visitor, history);
-        showToast('Auto-filled repeat visitor details!', 'success');
-      } else {
-        hideRepeatVisitorBanner();
-      }
-    })
-    .catch(function (err) {
-      console.error('Lookup error:', err);
-    });
+          state.oldVisitorPhoto = visitor.photo || null;
+          showRepeatVisitorBanner(visitor, history);
+          showToast('Auto-filled repeat visitor details!', 'success');
+        } else {
+          hideRepeatVisitorBanner();
+        }
+      })
+      .catch(function (err) {
+        console.error('Lookup error:', err);
+      });
   }
 
   function showRepeatVisitorBanner(visitor, history) {
@@ -736,7 +736,7 @@
     if (!navigator.onLine) {
       payload.checkInTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       payload.visitorId = 'OFF-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-      
+
       saveOfflineRecord(payload, function () {
         setSubmitting(false);
         showSuccessScreen({
@@ -841,7 +841,7 @@
     dom.hostName.value = '';
     dom.purpose.value = '';
     dom.aadhaarLast4.value = '';
-    
+
     var idCardSelect = document.getElementById('idCardType');
     if (idCardSelect) {
       idCardSelect.value = '';
@@ -879,7 +879,7 @@
   function switchTab(tab) {
     var tabRegister = document.getElementById('tabRegister');
     var tabDashboard = document.getElementById('tabDashboard');
-    
+
     if (tab === 'register') {
       tabRegister.classList.add('active');
       tabDashboard.classList.remove('active');
@@ -916,21 +916,21 @@
       method: 'GET',
       redirect: 'follow'
     })
-    .then(function (res) { return res.json(); })
-    .then(function (json) {
-      if (json.success && json.data) {
-        dashboardVisitors = json.data.visitors || [];
-        updateDashboardStats(json.data.stats || {});
-        renderVisitorList(dashboardVisitors);
-      } else {
-        showToast('Failed to retrieve dashboard records.', 'error');
-        listContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--danger);">Failed to load dashboard data.</div>';
-      }
-    })
-    .catch(function (err) {
-      console.error('Dashboard load error:', err);
-      listContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--danger);">Network error loading live queue.</div>';
-    });
+      .then(function (res) { return res.json(); })
+      .then(function (json) {
+        if (json.success && json.data) {
+          dashboardVisitors = json.data.visitors || [];
+          updateDashboardStats(json.data.stats || {});
+          renderVisitorList(dashboardVisitors);
+        } else {
+          showToast('Failed to retrieve dashboard records.', 'error');
+          listContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--danger);">Failed to load dashboard data.</div>';
+        }
+      })
+      .catch(function (err) {
+        console.error('Dashboard load error:', err);
+        listContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--danger);">Network error loading live queue.</div>';
+      });
   }
 
   function updateDashboardStats(stats) {
@@ -970,7 +970,7 @@
       var actionsHtml = '';
       if (statusLower === 'waiting approval') {
         actionsHtml = '<button type="button" class="btn btn-primary btn-sm btn-approve" data-id="' + visitor.id + '" style="background: var(--success); border-color: var(--success); font-size: 0.75rem; padding: 4px 8px; margin-right: 4px;">Approve</button>' +
-                      '<button type="button" class="btn btn-secondary btn-sm btn-reject" data-id="' + visitor.id + '" style="background: var(--danger); border-color: var(--danger); font-size: 0.75rem; padding: 4px 8px;">Reject</button>';
+          '<button type="button" class="btn btn-secondary btn-sm btn-reject" data-id="' + visitor.id + '" style="background: var(--danger); border-color: var(--danger); font-size: 0.75rem; padding: 4px 8px;">Reject</button>';
       } else if (statusLower === 'approved') {
         actionsHtml = '<button type="button" class="btn btn-primary btn-sm btn-checkin" data-id="' + visitor.id + '" style="font-size: 0.75rem; padding: 4px 8px;">Check In</button>';
       } else if (statusLower === 'inside') {
@@ -979,23 +979,23 @@
 
       var timeLabel = visitor.checkOutTime ? 'Stay: ' + (visitor.duration || '') : 'Time: ' + (visitor.checkInTime || '');
 
-      card.innerHTML = 
+      card.innerHTML =
         '<div class="visitor-avatar btn-view-history" data-mobile="' + visitor.mobile + '" title="View History">' +
-          '<img src="' + photoUrl + '" alt="Visitor photo">' +
+        '<img src="' + photoUrl + '" alt="Visitor photo">' +
         '</div>' +
         '<div class="visitor-details">' +
-          '<div class="visitor-meta-main">' +
-            '<span class="visitor-meta-name">' + escapeHtml(visitor.name) + '</span>' +
-            '<span class="visitor-meta-sub">' + visitor.mobile + ' | ' + escapeHtml(visitor.company || 'Personal') + '</span>' +
-          '</div>' +
-          '<div class="visitor-meta-visit">' +
-            '<div>Host: <strong>' + escapeHtml(visitor.host) + '</strong></div>' +
-            '<div style="font-size:0.75rem; color:var(--text-secondary);">' + timeLabel + '</div>' +
-          '</div>' +
-          '<div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top: 4px;">' +
-            badgeHtml +
-            '<div class="visitor-item-actions">' + actionsHtml + '</div>' +
-          '</div>' +
+        '<div class="visitor-meta-main">' +
+        '<span class="visitor-meta-name">' + escapeHtml(visitor.name) + '</span>' +
+        '<span class="visitor-meta-sub">' + visitor.mobile + ' | ' + escapeHtml(visitor.company || 'Personal') + '</span>' +
+        '</div>' +
+        '<div class="visitor-meta-visit">' +
+        '<div>Host: <strong>' + escapeHtml(visitor.host) + '</strong></div>' +
+        '<div style="font-size:0.75rem; color:var(--text-secondary);">' + timeLabel + '</div>' +
+        '</div>' +
+        '<div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top: 4px;">' +
+        badgeHtml +
+        '<div class="visitor-item-actions">' + actionsHtml + '</div>' +
+        '</div>' +
         '</div>';
 
       listContainer.appendChild(card);
@@ -1051,19 +1051,19 @@
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload)
     })
-    .then(function (res) { return res.json(); })
-    .then(function (json) {
-      if (json.success) {
-        showToast('Visitor status updated to ' + newStatus, 'success');
-        loadDashboardData();
-      } else {
-        showToast('Update failed: ' + json.message, 'error');
-      }
-    })
-    .catch(function (err) {
-      console.error('Update status error:', err);
-      showToast('Network error updating state.', 'error');
-    });
+      .then(function (res) { return res.json(); })
+      .then(function (json) {
+        if (json.success) {
+          showToast('Visitor status updated to ' + newStatus, 'success');
+          loadDashboardData();
+        } else {
+          showToast('Update failed: ' + json.message, 'error');
+        }
+      })
+      .catch(function (err) {
+        console.error('Update status error:', err);
+        showToast('Network error updating state.', 'error');
+      });
   }
 
   function openRemarksModal() {
@@ -1105,11 +1105,11 @@
       var host = (v.host || '').toLowerCase();
       var company = (v.company || '').toLowerCase();
       var id = (v.id || '').toLowerCase();
-      return name.indexOf(query) !== -1 || 
-             mobile.indexOf(query) !== -1 || 
-             host.indexOf(query) !== -1 || 
-             company.indexOf(query) !== -1 ||
-             id.indexOf(query) !== -1;
+      return name.indexOf(query) !== -1 ||
+        mobile.indexOf(query) !== -1 ||
+        host.indexOf(query) !== -1 ||
+        company.indexOf(query) !== -1 ||
+        id.indexOf(query) !== -1;
     });
 
     renderVisitorList(filtered);
@@ -1142,52 +1142,52 @@
       method: 'GET',
       redirect: 'follow'
     })
-    .then(function (res) { return res.json(); })
-    .then(function (json) {
-      if (json.success && json.data) {
-        var profile = json.data.profile || {};
-        var stats = json.data.stats || {};
-        var visits = json.data.visits || [];
+      .then(function (res) { return res.json(); })
+      .then(function (json) {
+        if (json.success && json.data) {
+          var profile = json.data.profile || {};
+          var stats = json.data.stats || {};
+          var visits = json.data.visits || [];
 
-        document.getElementById('historyProfileName').textContent = profile.name || 'Visitor';
-        document.getElementById('historyProfileMobile').textContent = profile.mobile || mobile;
-        document.getElementById('historyProfileCompany').textContent = profile.company || 'Personal';
-        document.getElementById('historyProfilePhoto').src = profile.photo || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="%2338bdf8" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
+          document.getElementById('historyProfileName').textContent = profile.name || 'Visitor';
+          document.getElementById('historyProfileMobile').textContent = profile.mobile || mobile;
+          document.getElementById('historyProfileCompany').textContent = profile.company || 'Personal';
+          document.getElementById('historyProfilePhoto').src = profile.photo || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="%2338bdf8" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
 
-        document.getElementById('historyStatTotal').textContent = stats.totalVisits || '0';
-        document.getElementById('historyStatAvg').textContent = stats.averageStay || 'N/A';
-        document.getElementById('historyStatAadhaar').textContent = profile.aadhaarLast4 || 'N/A';
+          document.getElementById('historyStatTotal').textContent = stats.totalVisits || '0';
+          document.getElementById('historyStatAvg').textContent = stats.averageStay || 'N/A';
+          document.getElementById('historyStatAadhaar').textContent = profile.aadhaarLast4 || 'N/A';
 
-        var timelineContainer = document.getElementById('historyTimeline');
-        if (visits.length === 0) {
-          timelineContainer.innerHTML = '<div style="text-align: center; padding: 20px;">No logs recorded.</div>';
-          return;
+          var timelineContainer = document.getElementById('historyTimeline');
+          if (visits.length === 0) {
+            timelineContainer.innerHTML = '<div style="text-align: center; padding: 20px;">No logs recorded.</div>';
+            return;
+          }
+
+          timelineContainer.innerHTML = '';
+          visits.forEach(function (v) {
+            var item = document.createElement('div');
+            item.className = 'timeline-item';
+
+            var remarksHtml = v.remarks ? '<div class="timeline-remarks">Remarks: ' + escapeHtml(v.remarks) + '</div>' : '';
+
+            item.innerHTML =
+              '<div class="timeline-dot"></div>' +
+              '<div class="timeline-time">' + v.date + ' ' + (v.checkInTime || '') + ' (' + (v.status || 'Inside') + ')</div>' +
+              '<div class="timeline-host">Host: ' + escapeHtml(v.host) + '</div>' +
+              '<div class="timeline-purpose">Purpose: ' + escapeHtml(v.purpose) + '</div>' +
+              remarksHtml;
+
+            timelineContainer.appendChild(item);
+          });
+        } else {
+          document.getElementById('historyTimeline').innerHTML = '<div style="text-align: center; padding: 20px; color: var(--danger);">Failed to retrieve history logs.</div>';
         }
-
-        timelineContainer.innerHTML = '';
-        visits.forEach(function (v) {
-          var item = document.createElement('div');
-          item.className = 'timeline-item';
-          
-          var remarksHtml = v.remarks ? '<div class="timeline-remarks">Remarks: ' + escapeHtml(v.remarks) + '</div>' : '';
-
-          item.innerHTML = 
-            '<div class="timeline-dot"></div>' +
-            '<div class="timeline-time">' + v.date + ' ' + (v.checkInTime || '') + ' (' + (v.status || 'Inside') + ')</div>' +
-            '<div class="timeline-host">Host: ' + escapeHtml(v.host) + '</div>' +
-            '<div class="timeline-purpose">Purpose: ' + escapeHtml(v.purpose) + '</div>' +
-            remarksHtml;
-
-          timelineContainer.appendChild(item);
-        });
-      } else {
-        document.getElementById('historyTimeline').innerHTML = '<div style="text-align: center; padding: 20px; color: var(--danger);">Failed to retrieve history logs.</div>';
-      }
-    })
-    .catch(function (err) {
-      console.error('History load error:', err);
-      document.getElementById('historyTimeline').innerHTML = '<div style="text-align: center; padding: 20px; color: var(--danger);">Connection error loading timeline.</div>';
-    });
+      })
+      .catch(function (err) {
+        console.error('History load error:', err);
+        document.getElementById('historyTimeline').innerHTML = '<div style="text-align: center; padding: 20px; color: var(--danger);">Connection error loading timeline.</div>';
+      });
   }
 
   function closeHistory() {
