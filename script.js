@@ -349,6 +349,18 @@
     var btnConfirmCheckout = document.getElementById('btnConfirmCheckout');
     if (btnConfirmCheckout) btnConfirmCheckout.addEventListener('click', handleConfirmCheckout);
 
+    // QR Code modal
+    var btnShowQR = document.getElementById('btnShowQR');
+    if (btnShowQR) btnShowQR.addEventListener('click', showQRModal);
+    var btnCloseQR = document.getElementById('btnCloseQR');
+    if (btnCloseQR) btnCloseQR.addEventListener('click', closeQRModal);
+    var qrOverlay = document.getElementById('qrCodeModal');
+    if (qrOverlay) {
+      qrOverlay.addEventListener('click', function (e) {
+        if (e.target === qrOverlay) closeQRModal();
+      });
+    }
+
     // History drawer close
     var btnHistoryClose = document.getElementById('btnHistoryClose');
     if (btnHistoryClose) btnHistoryClose.addEventListener('click', closeHistory);
@@ -687,9 +699,13 @@
     })
       .then(function (res) { return res.json(); })
       .then(function (json) {
-        if (json.success && json.data && json.data.visitor) {
-          var visitor = json.data.visitor;
-          var history = json.data.history || {};
+        /* API response structure: jsonSuccess wraps searchVisitorByMobile result
+           → json = { success, data: { success, exists, data: { visitor, history } } }
+           So the actual visitor data is at json.data.data.visitor */
+        var searchResult = json.data || {};
+        if (json.success && searchResult.exists && searchResult.data && searchResult.data.visitor) {
+          var visitor = searchResult.data.visitor;
+          var history = searchResult.data.history || {};
 
           dom.visitorName.value = visitor.name || '';
           dom.company.value = visitor.company || '';
@@ -703,7 +719,7 @@
             useOldPhoto(true);
           }
 
-          showToast('Auto-filled repeat visitor details!', 'success');
+          showToast('Returning visitor identified! Details auto-filled.', 'success');
         } else {
           hideRepeatVisitorBanner();
         }
@@ -1073,7 +1089,7 @@
 
     dom.successVisitorId.textContent = data.visitorId || '';
     dom.successHostName.textContent = data.hostName || '';
-    dom.successTime.textContent = data.checkInTime || '';
+    dom.successTime.textContent = data.timestamp || '';
 
     var successPhoto = document.getElementById('successVisitorPhoto');
     if (successPhoto && state.capturedImage) {
@@ -1084,11 +1100,28 @@
       successName.textContent = dom.visitorName.value.trim() || 'Visitor';
     }
 
+    /* Construct professional WhatsApp notification with Approve / Reject deep links */
     var hostMobile = data.hostMobile || '';
     if (hostMobile) {
       var visitorName = dom.visitorName.value.trim();
+      var companyText = dom.company.value.trim();
       var purposeText = dom.purpose.value.trim();
-      var message = 'Hello,\n\nVisitor *' + visitorName + '* is waiting at the gate.\n\nPurpose: ' + purposeText + '\n\nPlease receive them.';
+      var visitorId = data.visitorId || '';
+
+      var approveUrl = API_URL + '?action=approve&id=' + encodeURIComponent(visitorId);
+      var rejectUrl = API_URL + '?action=reject&id=' + encodeURIComponent(visitorId);
+
+      var message = '🏢 *Visitor Approval Request*\n'
+        + '━━━━━━━━━━━━━━━━━━━━━\n'
+        + '👤 *Name:* ' + visitorName + '\n'
+        + '🏭 *Company:* ' + companyText + '\n'
+        + '📋 *Purpose:* ' + purposeText + '\n'
+        + '🆔 *Visitor ID:* ' + visitorId + '\n'
+        + '━━━━━━━━━━━━━━━━━━━━━\n\n'
+        + '✅ *Approve:*\n' + approveUrl + '\n\n'
+        + '❌ *Reject:*\n' + rejectUrl + '\n\n'
+        + '_Powered by VisitorSarthi_';
+
       var waUrl = 'https://wa.me/91' + hostMobile + '?text=' + encodeURIComponent(message);
       dom.btnWhatsApp.href = waUrl;
       dom.btnWhatsApp.classList.remove('hidden');
@@ -1696,6 +1729,23 @@
     var div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+  }
+
+  /* ---------- QR Code Self-Registration ---------- */
+  function showQRModal() {
+    var modal = document.getElementById('qrCodeModal');
+    var qrImg = document.getElementById('qrCodeImage');
+    if (!modal || !qrImg) return;
+
+    var registrationUrl = API_URL;
+    var qrApiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&color=38bdf8&bgcolor=0b1326&data=' + encodeURIComponent(registrationUrl);
+    qrImg.src = qrApiUrl;
+    modal.classList.remove('hidden');
+  }
+
+  function closeQRModal() {
+    var modal = document.getElementById('qrCodeModal');
+    if (modal) modal.classList.add('hidden');
   }
 
   /* ---------- Boot ---------- */

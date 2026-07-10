@@ -1105,6 +1105,99 @@ textarea.form-control {
   flex: 1;
 }
 
+/* QR Code Button */
+.btn-qr {
+  background: rgba(56, 189, 248, 0.1) !important;
+  color: var(--primary) !important;
+  border: 1px solid rgba(56, 189, 248, 0.25) !important;
+  padding: 8px 16px !important;
+  font-size: 0.8125rem !important;
+  gap: 6px;
+  white-space: nowrap;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-qr:hover:not(:disabled) {
+  background: rgba(56, 189, 248, 0.2) !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 4px 16px rgba(56, 189, 248, 0.25) !important;
+  transform: translateY(-1px) !important;
+}
+.btn-qr svg {
+  flex-shrink: 0;
+}
+
+/* QR Code Modal */
+.qr-modal {
+  max-width: 420px;
+}
+.qr-image-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(56, 189, 248, 0.04);
+  border: 2px dashed rgba(56, 189, 248, 0.2);
+  border-radius: var(--radius-lg);
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.qr-image-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.05) 0%, transparent 50%, rgba(82, 232, 124, 0.05) 100%);
+  pointer-events: none;
+}
+.qr-image-wrapper img {
+  width: 280px;
+  height: 280px;
+  border-radius: var(--radius-sm);
+  position: relative;
+  z-index: 1;
+}
+.qr-instructions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  text-align: left;
+  margin-top: 4px;
+}
+.qr-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+}
+.qr-step:hover {
+  border-color: rgba(56, 189, 248, 0.25);
+  background: rgba(23, 31, 51, 0.7);
+}
+.qr-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: #0b1326;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+@media (max-width: 479px) {
+  .qr-instructions {
+    grid-template-columns: 1fr;
+  }
+}
+
 .visitor-list {
   display: flex;
   flex-direction: column;

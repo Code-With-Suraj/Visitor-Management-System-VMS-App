@@ -272,6 +272,13 @@
         <div class="dashboard-search">
           <input type="text" id="dashboardSearchInput" class="form-control" placeholder="Search by name/mobile/ID...">
         </div>
+        <button type="button" id="btnShowQR" class="btn btn-qr" title="Show Self-Registration QR Code">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            <rect x="14" y="14" width="3" height="3"/><rect x="20" y="14" width="1" height="3"/><rect x="14" y="20" width="3" height="1"/><rect x="20" y="20" width="1" height="1"/>
+          </svg>
+          QR Code
+        </button>
       </div>
 
       <!-- Live Queue List -->
@@ -296,7 +303,7 @@
       </div>
 
       <h2 style="font-size: 1.75rem; color: var(--success); margin-bottom: 8px;">Registration Successful!</h2>
-      <p style="color: var(--text-secondary); margin-bottom: 24px;">Your check-in registration has been submitted. Please wait for host approval.</p>
+      <p style="color: var(--text-secondary); margin-bottom: 24px;">Visitor registration submitted. The host will be notified on WhatsApp with Approve / Reject options. Please wait for approval.</p>
 
       <!-- High-Tech Visitor Badge -->
       <div class="visitor-badge-card">
@@ -392,6 +399,28 @@
       <div class="modal-footer" style="justify-content: center; gap: 12px; margin-top: 16px;">
         <button type="button" id="btnCancelPassword" class="btn btn-secondary">Cancel</button>
         <button type="button" id="btnConfirmPassword" class="btn btn-primary">Unlock</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== QR Code Self-Registration Modal ===== -->
+  <div class="modal-overlay hidden" id="qrCodeModal">
+    <div class="modal-container qr-modal">
+      <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center;">
+        <span>📱 Self-Registration QR Code</span>
+        <button type="button" id="btnCloseQR" class="drawer-close" style="position:static; background:none; border:none; color:var(--text-secondary); font-size:1.5rem; cursor:pointer;">&times;</button>
+      </div>
+      <div style="text-align:center; padding:16px 0 8px;">
+        <p style="font-size:0.875rem; color:var(--text-secondary); margin-bottom:20px;">Display this QR code at the entrance gate. Visitors can scan it with their phone camera to open the self-registration form.</p>
+        <div class="qr-image-wrapper">
+          <img id="qrCodeImage" src="" alt="Self-Registration QR Code">
+        </div>
+        <div class="qr-instructions">
+          <div class="qr-step"><span class="qr-step-num">1</span> Visitor scans QR at gate</div>
+          <div class="qr-step"><span class="qr-step-num">2</span> Fills registration form on their phone</div>
+          <div class="qr-step"><span class="qr-step-num">3</span> Host gets WhatsApp with Approve / Reject</div>
+          <div class="qr-step"><span class="qr-step-num">4</span> Receptionist checks-in approved visitor</div>
+        </div>
       </div>
     </div>
   </div>
