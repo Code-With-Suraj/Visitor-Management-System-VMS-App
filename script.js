@@ -24,7 +24,10 @@
     pendingCheckoutId: null,
     videoDevices: [],
     dashboardUnlocked: false,
-    dashboardPassword: ''
+    dashboardPassword: '',
+    currentPage: 1,
+    itemsPerPage: 10,
+    filteredVisitors: []
   };
 
   /* ---------- DOM References ---------- */
@@ -989,8 +992,10 @@
             state.currentTab = 'dashboard';
           }
           dashboardVisitors = json.data.visitors || [];
+          state.filteredVisitors = dashboardVisitors;
+          state.currentPage = 1;
           updateDashboardStats(json.data.stats || {});
-          renderVisitorList(dashboardVisitors);
+          renderVisitorList(state.filteredVisitors);
         } else {
           var errMsg = json.message || 'Failed to retrieve dashboard records.';
           showToast(errMsg, 'error');
@@ -1020,16 +1025,27 @@
 
   function renderVisitorList(visitors) {
     var listContainer = document.getElementById('dashboardVisitorList');
+    var paginationContainer = document.getElementById('dashboardPagination');
     if (!listContainer) return;
 
     if (visitors.length === 0) {
       listContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);">No visitor entries matching filters today.</div>';
+      if (paginationContainer) paginationContainer.innerHTML = '';
       return;
     }
 
+    // Pagination Calculation
+    var totalPages = Math.ceil(visitors.length / state.itemsPerPage) || 1;
+    if (state.currentPage > totalPages) state.currentPage = totalPages;
+    if (state.currentPage < 1) state.currentPage = 1;
+
+    var start = (state.currentPage - 1) * state.itemsPerPage;
+    var end = start + state.itemsPerPage;
+    var pageVisitors = visitors.slice(start, end);
+
     listContainer.innerHTML = '';
 
-    visitors.forEach(function (visitor) {
+    pageVisitors.forEach(function (visitor) {
       var card = document.createElement('div');
       card.className = 'visitor-item-card';
 
@@ -1077,6 +1093,32 @@
 
       listContainer.appendChild(card);
     });
+
+    // Render Pagination Controls
+    if (paginationContainer) {
+      if (totalPages <= 1) {
+        paginationContainer.innerHTML = '';
+      } else {
+        paginationContainer.innerHTML =
+          '<button type="button" id="btnPrevPage" ' + (state.currentPage === 1 ? 'disabled' : '') + '>Previous</button>' +
+          '<span class="pagination-info">Page ' + state.currentPage + ' of ' + totalPages + '</span>' +
+          '<button type="button" id="btnNextPage" ' + (state.currentPage === totalPages ? 'disabled' : '') + '>Next</button>';
+
+        document.getElementById('btnPrevPage').addEventListener('click', function () {
+          if (state.currentPage > 1) {
+            state.currentPage--;
+            renderVisitorList(visitors);
+          }
+        });
+
+        document.getElementById('btnNextPage').addEventListener('click', function () {
+          if (state.currentPage < totalPages) {
+            state.currentPage++;
+            renderVisitorList(visitors);
+          }
+        });
+      }
+    }
 
     listContainer.querySelectorAll('.btn-approve').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
@@ -1174,16 +1216,18 @@
   function handleDashboardSearch(e) {
     var query = e.target.value.toLowerCase().trim();
     if (!query) {
-      renderVisitorList(dashboardVisitors);
+      state.filteredVisitors = dashboardVisitors;
+      state.currentPage = 1;
+      renderVisitorList(state.filteredVisitors);
       return;
     }
 
     var filtered = dashboardVisitors.filter(function (v) {
-      var name = (v.visitorName || '').toLowerCase();
-      var mobile = (v.mobileNumber || '').toLowerCase();
-      var host = (v.hostName || '').toLowerCase();
-      var company = (v.company || '').toLowerCase();
-      var id = (v.visitorId || '').toLowerCase();
+      var name = String(v.visitorName || '').toLowerCase();
+      var mobile = String(v.mobileNumber || '').toLowerCase();
+      var host = String(v.hostName || '').toLowerCase();
+      var company = String(v.company || '').toLowerCase();
+      var id = String(v.visitorId || '').toLowerCase();
       return name.indexOf(query) !== -1 ||
         mobile.indexOf(query) !== -1 ||
         host.indexOf(query) !== -1 ||
@@ -1191,7 +1235,9 @@
         id.indexOf(query) !== -1;
     });
 
-    renderVisitorList(filtered);
+    state.filteredVisitors = filtered;
+    state.currentPage = 1;
+    renderVisitorList(state.filteredVisitors);
   }
 
   /* ---------- Visitor History drawer ---------- */
