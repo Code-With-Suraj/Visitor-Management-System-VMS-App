@@ -10,7 +10,7 @@
   /* ==========================================================
      CONFIGURATION
      ========================================================== */
-  var API_URL = 'https://script.google.com/macros/s/AKfycbwCXYdO9qCAwRKqL2Obgjvdh7Y3QKhEXs5pisOZyFS37AH-84paf3Tho5XxVShMZoBw/exec';
+  var API_URL = 'https://script.google.com/macros/s/AKfycbwXYmbSekOo59rTCKdOGWs8Qs-T-asjWbPjaEd7BkpZsOo-wqGxMOPdl6OnGddHk3I/exec';
 
   /* ---------- State ---------- */
   var state = {
@@ -27,7 +27,8 @@
     dashboardPassword: '',
     currentPage: 1,
     itemsPerPage: 10,
-    filteredVisitors: []
+    filteredVisitors: [],
+    isAutoFilled: false
   };
 
   /* ---------- DOM References ---------- */
@@ -70,6 +71,10 @@
 
     dom.hostSkeleton = document.getElementById('hostSkeleton');
     dom.toastContainer = document.getElementById('toastContainer');
+
+    // Searchable host select elements
+    dom.hostSearchInput = document.getElementById('hostSearchInput');
+    dom.hostDropdownMenu = document.getElementById('hostDropdownMenu');
   }
 
   /* ---------- IndexedDB Configuration ---------- */
@@ -292,8 +297,43 @@
 
     var btnUseOld = document.getElementById('btnUseOldPhoto');
     if (btnUseOld) {
-      btnUseOld.addEventListener('click', useOldPhoto);
+      btnUseOld.addEventListener('click', function () { useOldPhoto(false); });
     }
+
+    // Searchable dropdown select events
+    if (dom.hostSearchInput) {
+      dom.hostSearchInput.addEventListener('focus', function () {
+        filterHosts();
+        dom.hostDropdownMenu.classList.remove('hidden');
+      });
+
+      dom.hostSearchInput.addEventListener('input', function () {
+        if (this.value.trim() === '') {
+          dom.hostName.value = '';
+        }
+        filterHosts();
+      });
+    }
+
+    document.addEventListener('click', function (e) {
+      var container = document.getElementById('hostSearchContainer');
+      if (container && !container.contains(e.target)) {
+        dom.hostDropdownMenu.classList.add('hidden');
+        var currentSelected = null;
+        for (var idx = 0; idx < state.hosts.length; idx++) {
+          var h = state.hosts[idx];
+          var display = h.name + (h.department ? ' (' + h.department + ')' : '');
+          if (dom.hostSearchInput.value === display) {
+            currentSelected = h;
+            break;
+          }
+        }
+        if (!currentSelected) {
+          dom.hostName.value = '';
+          dom.hostSearchInput.value = '';
+        }
+      }
+    });
 
     // Tabs
     var tabRegister = document.getElementById('tabRegister');
@@ -491,17 +531,21 @@
     var vw = video.videoWidth;
     var vh = video.videoHeight;
 
-    var maxDim = 900;
-    var scale = 1;
-    if (vw > maxDim || vh > maxDim) {
-      scale = maxDim / Math.max(vw, vh);
+    // Crop to 1:1 square from center
+    var size = Math.min(vw, vh);
+    var targetDim = 600; // 600x600 is compact and high quality
+    if (size < targetDim) {
+      targetDim = size;
     }
 
-    canvas.width = Math.round(vw * scale);
-    canvas.height = Math.round(vh * scale);
+    canvas.width = targetDim;
+    canvas.height = targetDim;
+
+    var sx = (vw - size) / 2;
+    var sy = (vh - size) / 2;
 
     var ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(video, sx, sy, size, size, 0, 0, targetDim, targetDim);
 
     var quality = 0.45;
     var dataUrl = canvas.toDataURL('image/jpeg', quality);
@@ -653,6 +697,12 @@
 
           state.oldVisitorPhoto = visitor.photo || null;
           showRepeatVisitorBanner(visitor, history);
+
+          state.isAutoFilled = true;
+          if (visitor.photo) {
+            useOldPhoto(true);
+          }
+
           showToast('Auto-filled repeat visitor details!', 'success');
         } else {
           hideRepeatVisitorBanner();
@@ -707,9 +757,13 @@
       banner.classList.add('hidden');
     }
     state.oldVisitorPhoto = null;
+    if (state.isAutoFilled) {
+      clearAutoFilledDetails();
+      state.isAutoFilled = false;
+    }
   }
 
-  function useOldPhoto() {
+  function useOldPhoto(silent) {
     if (state.oldVisitorPhoto) {
       state.capturedImage = state.oldVisitorPhoto;
       dom.capturedPreview.src = state.oldVisitorPhoto;
@@ -722,8 +776,25 @@
       dom.btnCapture.classList.add('hidden');
       dom.btnRetake.classList.remove('hidden');
       stopCamera();
-      showToast('Loaded previous visit photo', 'success');
+      if (!silent) {
+        showToast('Loaded previous visit photo', 'success');
+      }
     }
+  }
+
+  function clearAutoFilledDetails() {
+    dom.visitorName.value = '';
+    dom.company.value = '';
+    dom.aadhaarLast4.value = '';
+    state.capturedImage = null;
+    dom.capturedPreview.src = '';
+    dom.capturedPreview.classList.add('hidden');
+    dom.cameraPlaceholder.classList.remove('hidden');
+    dom.btnStartCamera.classList.remove('hidden');
+    dom.btnSwitchCamera.classList.add('hidden');
+    if (dom.cameraSelectGroup) dom.cameraSelectGroup.classList.add('hidden');
+    dom.btnCapture.classList.add('hidden');
+    dom.btnRetake.classList.add('hidden');
   }
 
   /* ---------- Host Loading ---------- */
@@ -731,6 +802,8 @@
     if (!isSilent) {
       dom.hostSkeleton.classList.remove('hidden');
       dom.hostName.classList.add('hidden');
+      var searchContainer = document.getElementById('hostSearchContainer');
+      if (searchContainer) searchContainer.classList.add('hidden');
     }
 
     fetch(API_URL + '?action=hosts', {
@@ -742,6 +815,19 @@
         if (json.success && json.data && json.data.hosts) {
           state.hosts = json.data.hosts;
           populateHostDropdown(json.data.hosts);
+
+          // Apply dynamic white-label branding
+          if (json.data.companyName) {
+            var brandingEl = document.getElementById('appCompanyBranding');
+            if (brandingEl) {
+              brandingEl.textContent = json.data.companyName;
+            }
+            var subBrandingEl = document.getElementById('appSubBranding');
+            if (subBrandingEl) {
+              subBrandingEl.innerHTML = 'Visitor Management &bull; Powered by VisitorSarthi';
+            }
+            document.title = json.data.companyName + ' — Smart Visitor Management';
+          }
         } else {
           showToast('Failed to load hosts', 'error');
         }
@@ -753,7 +839,12 @@
       .finally(function () {
         if (!isSilent) {
           dom.hostSkeleton.classList.add('hidden');
-          dom.hostName.classList.remove('hidden');
+          var searchContainer = document.getElementById('hostSearchContainer');
+          if (searchContainer) {
+            searchContainer.classList.remove('hidden');
+          } else {
+            dom.hostName.classList.remove('hidden');
+          }
           setTimeout(function () {
             dom.pageLoader.classList.add('hidden');
           }, 600);
@@ -771,6 +862,53 @@
     });
   }
 
+  /* ---------- Searchable Dropdown Helper Functions ---------- */
+  function filterHosts() {
+    var query = dom.hostSearchInput.value.toLowerCase().trim();
+    var filtered = state.hosts.filter(function (host) {
+      var name = (host.name || '').toLowerCase();
+      var dept = (host.department || '').toLowerCase();
+      return name.indexOf(query) !== -1 || dept.indexOf(query) !== -1;
+    });
+    renderHostMenu(filtered);
+  }
+
+  function renderHostMenu(hostsToRender) {
+    dom.hostDropdownMenu.innerHTML = '';
+    if (hostsToRender.length === 0) {
+      dom.hostDropdownMenu.innerHTML = '<div class="searchable-select-no-results">No hosts found</div>';
+      return;
+    }
+
+    hostsToRender.forEach(function (host) {
+      var item = document.createElement('div');
+      item.className = 'searchable-select-item';
+      if (dom.hostName.value === host.name) {
+        item.classList.add('selected');
+      }
+      item.textContent = host.name + (host.department ? ' (' + host.department + ')' : '');
+      item.addEventListener('click', function () {
+        selectHost(host);
+      });
+      dom.hostDropdownMenu.appendChild(item);
+    });
+  }
+
+  function selectHost(host) {
+    dom.hostSearchInput.value = host.name + (host.department ? ' (' + host.department + ')' : '');
+    dom.hostName.value = host.name;
+    dom.hostDropdownMenu.classList.add('hidden');
+
+    // Clear error if active
+    dom.hostName.classList.remove('error');
+    if (dom.hostSearchInput) dom.hostSearchInput.classList.remove('error');
+    var errorEl = document.getElementById('hostNameError');
+    if (errorEl) {
+      errorEl.classList.remove('visible');
+      errorEl.textContent = '';
+    }
+  }
+
   /* ---------- Form Validation ---------- */
   function validateForm() {
     var errors = [];
@@ -786,8 +924,14 @@
       errors.push({ field: 'mobileNumber', msg: 'Enter a valid 10-digit mobile number' });
     }
 
+    var company = dom.company.value.trim();
+    if (!company || company.length < 3) {
+      errors.push({ field: 'company', msg: 'Company / Address is required (min 3 characters)' });
+    }
+
     if (!dom.hostName.value) {
       errors.push({ field: 'hostName', msg: 'Please select a host' });
+      if (dom.hostSearchInput) dom.hostSearchInput.classList.add('error');
     }
 
     var purpose = dom.purpose.value.trim();
@@ -966,6 +1110,12 @@
     dom.hostName.value = '';
     dom.purpose.value = '';
     dom.aadhaarLast4.value = '';
+
+    if (dom.hostSearchInput) {
+      dom.hostSearchInput.value = '';
+      dom.hostSearchInput.classList.remove('error');
+    }
+    state.isAutoFilled = false;
 
     var idCardSelect = document.getElementById('idCardType');
     if (idCardSelect) {
@@ -1215,24 +1365,64 @@
     if (paginationContainer) {
       if (totalPages <= 1) {
         paginationContainer.innerHTML = '';
+        paginationContainer.classList.add('hidden');
       } else {
-        paginationContainer.innerHTML =
-          '<button type="button" id="btnPrevPage" ' + (state.currentPage === 1 ? 'disabled' : '') + '>Previous</button>' +
-          '<span class="pagination-info">Page ' + state.currentPage + ' of ' + totalPages + '</span>' +
-          '<button type="button" id="btnNextPage" ' + (state.currentPage === totalPages ? 'disabled' : '') + '>Next</button>';
+        paginationContainer.classList.remove('hidden');
+        paginationContainer.className = 'pagination-container';
 
-        document.getElementById('btnPrevPage').addEventListener('click', function () {
-          if (state.currentPage > 1) {
-            state.currentPage--;
-            renderVisitorList(visitors);
+        // Stats Summary
+        var fromItem = start + 1;
+        var toItem = Math.min(end, visitors.length);
+        var statsHtml = '<div class="pagination-summary">Showing <span class="highlight">' + fromItem + '</span> to <span class="highlight">' + toItem + '</span> of <span class="highlight">' + visitors.length + '</span> entries</div>';
+
+        // Page Navigation Buttons
+        var pagesHtml = '<div class="pagination-pages">';
+
+        // First & Prev buttons
+        pagesHtml += '<button type="button" class="pagination-btn first-page" data-page="1" ' + (state.currentPage === 1 ? 'disabled' : '') + ' title="First Page">&laquo;</button>';
+        pagesHtml += '<button type="button" class="pagination-btn prev-page" data-page="' + (state.currentPage - 1) + '" ' + (state.currentPage === 1 ? 'disabled' : '') + ' title="Previous Page">&lsaquo;</button>';
+
+        // Numbered buttons with ellipses
+        var range = [];
+        var rangeWidth = 1; // how many pages around current page
+        for (var i = 1; i <= totalPages; i++) {
+          if (i === 1 || i === totalPages || (i >= state.currentPage - rangeWidth && i <= state.currentPage + rangeWidth)) {
+            range.push(i);
+          } else if (range[range.length - 1] !== '...') {
+            range.push('...');
+          }
+        }
+
+        range.forEach(function (p) {
+          if (p === '...') {
+            pagesHtml += '<span class="pagination-ellipsis">&hellip;</span>';
+          } else {
+            var activeClass = p === state.currentPage ? 'active' : '';
+            pagesHtml += '<button type="button" class="pagination-btn ' + activeClass + '" data-page="' + p + '">' + p + '</button>';
           }
         });
 
-        document.getElementById('btnNextPage').addEventListener('click', function () {
-          if (state.currentPage < totalPages) {
-            state.currentPage++;
-            renderVisitorList(visitors);
-          }
+        // Next & Last buttons
+        pagesHtml += '<button type="button" class="pagination-btn next-page" data-page="' + (state.currentPage + 1) + '" ' + (state.currentPage === totalPages ? 'disabled' : '') + ' title="Next Page">&rsaquo;</button>';
+        pagesHtml += '<button type="button" class="pagination-btn last-page" data-page="' + totalPages + '" ' + (state.currentPage === totalPages ? 'disabled' : '') + ' title="Last Page">&raquo;</button>';
+
+        pagesHtml += '</div>';
+
+        paginationContainer.innerHTML = statsHtml + pagesHtml;
+
+        // Bind events on buttons
+        paginationContainer.querySelectorAll('.pagination-btn').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var targetPage = parseInt(this.getAttribute('data-page'), 10);
+            if (targetPage && targetPage >= 1 && targetPage <= totalPages && targetPage !== state.currentPage) {
+              state.currentPage = targetPage;
+              renderVisitorList(visitors);
+              var dashboardSearch = document.getElementById('dashboardSearchInput');
+              if (dashboardSearch) {
+                dashboardSearch.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            }
+          });
         });
       }
     }

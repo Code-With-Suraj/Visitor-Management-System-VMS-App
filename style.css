@@ -289,6 +289,10 @@ textarea.form-control {
   background-size: 20px 20px;
 }
 
+#cameraViewport {
+  aspect-ratio: 1/1;
+}
+
 /* HUD Accents for Camera Viewport */
 .hud-corner {
   position: absolute;
@@ -933,6 +937,57 @@ textarea.form-control {
   box-shadow: 0 0 8px var(--primary);
 }
 
+/* ---------- Searchable Select Dropdown ---------- */
+.searchable-select-container {
+  position: relative;
+  width: 100%;
+}
+.searchable-select-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: var(--shadow-lg);
+  margin-top: 4px;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+.searchable-select-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 0.9375rem;
+  transition: var(--transition);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+  text-align: left;
+}
+.searchable-select-item:last-child {
+  border-bottom: none;
+}
+.searchable-select-item:hover {
+  background: rgba(56, 189, 248, 0.1);
+  color: var(--primary);
+  padding-left: 18px;
+}
+.searchable-select-item.selected {
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--primary);
+  font-weight: 600;
+  border-left: 3px solid var(--primary);
+}
+.searchable-select-no-results {
+  padding: 12px 14px;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
 /* ---------- ID Card Section ---------- */
 .id-card-section {
   animation: fadeUp 0.3s ease;
@@ -1391,43 +1446,87 @@ textarea.form-control {
   to { transform: translateX(0); }
 }
 
-/* ---------- Pagination Controls ---------- */
-.pagination-controls {
+/* ---------- Premium Modern Pagination Controls ---------- */
+.pagination-container {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   margin-top: 24px;
-  padding: 12px;
+  padding: 16px;
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-.pagination-controls button {
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  color: var(--text-primary);
-  padding: 6px 16px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   transition: var(--transition);
+  width: 100%;
 }
-.pagination-controls button:hover:not(:disabled) {
-  border-color: var(--primary);
-  box-shadow: 0 0 8px var(--primary-glow);
-  color: var(--primary);
+@media (min-width: 640px) {
+  .pagination-container {
+    flex-direction: row;
+    justify-content: space-between;
+  }
 }
-.pagination-controls button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-.pagination-info {
+.pagination-summary {
   font-size: 0.875rem;
   color: var(--text-secondary);
-  font-weight: 500;
 }
+.pagination-summary .highlight {
+  color: var(--primary);
+  font-weight: 600;
+  text-shadow: 0 0 8px var(--primary-glow);
+}
+.pagination-pages {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pagination-btn {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+.pagination-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(56, 189, 248, 0.05);
+  box-shadow: 0 0 8px var(--primary-glow);
+  transform: translateY(-1px);
+}
+.pagination-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+.pagination-btn.active {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: #0b1326;
+  border-color: transparent;
+  box-shadow: 0 0 12px var(--primary-glow);
+  font-weight: 700;
+}
+.pagination-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.pagination-ellipsis {
+  color: var(--text-muted);
+  padding: 0 6px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  user-select: none;
+}
+
