@@ -10,7 +10,7 @@
   /* ==========================================================
      CONFIGURATION
      ========================================================== */
-  var API_URL = 'https://script.google.com/macros/s/AKfycbyBgjHk04NPHQSO9CjaOUbhUXvJPnw9x5L_4vTR4700FMNgEvpTDY6j0hZlujvOpKaz/exec';
+  var API_URL = 'https://script.google.com/macros/s/AKfycbw7tjv4t22G9QDdZLKKa37CJk4BVkY4gWjngVJt40svKpjNtj7arKy3WLbfCNrGMjgz/exec';
 
   /* ---------- State ---------- */
   var state = {
@@ -22,7 +22,9 @@
     isSubmitting: false,
     currentTab: 'register',
     pendingCheckoutId: null,
-    videoDevices: []
+    videoDevices: [],
+    dashboardUnlocked: false,
+    dashboardPassword: ''
   };
 
   /* ---------- DOM References ---------- */
@@ -217,6 +219,20 @@
     // Network connection listeners
     window.addEventListener('online', updateNetworkStatus);
     window.addEventListener('offline', updateNetworkStatus);
+
+    // Password modal events
+    var btnCancelPassword = document.getElementById('btnCancelPassword');
+    if (btnCancelPassword) btnCancelPassword.addEventListener('click', closePasswordModal);
+    var btnConfirmPassword = document.getElementById('btnConfirmPassword');
+    if (btnConfirmPassword) btnConfirmPassword.addEventListener('click', handleConfirmPassword);
+    var passwordInput = document.getElementById('dashboardPasswordInput');
+    if (passwordInput) {
+      passwordInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+          handleConfirmPassword();
+        }
+      });
+    }
   }
 
   /* ---------- Network State Badge & Sync ---------- */
@@ -606,9 +622,11 @@
   }
 
   /* ---------- Host Loading ---------- */
-  function loadHosts() {
-    dom.hostSkeleton.classList.remove('hidden');
-    dom.hostName.classList.add('hidden');
+  function loadHosts(isSilent) {
+    if (!isSilent) {
+      dom.hostSkeleton.classList.remove('hidden');
+      dom.hostName.classList.add('hidden');
+    }
 
     fetch(API_URL + '?action=hosts', {
       method: 'GET',
@@ -628,11 +646,13 @@
         showToast('Network error loading hosts.', 'error');
       })
       .finally(function () {
-        dom.hostSkeleton.classList.add('hidden');
-        dom.hostName.classList.remove('hidden');
-        setTimeout(function () {
-          dom.pageLoader.classList.add('hidden');
-        }, 600);
+        if (!isSilent) {
+          dom.hostSkeleton.classList.add('hidden');
+          dom.hostName.classList.remove('hidden');
+          setTimeout(function () {
+            dom.pageLoader.classList.add('hidden');
+          }, 600);
+        }
       });
   }
 
@@ -887,7 +907,12 @@
       document.getElementById('dashboardSection').classList.add('hidden');
       dom.successScreen.classList.remove('active');
       state.currentTab = 'register';
+      loadHosts(true); // Silent dynamic refresh of hosts from Google Sheet!
     } else {
+      if (!state.dashboardUnlocked) {
+        openPasswordModal();
+        return;
+      }
       tabRegister.classList.remove('active');
       tabDashboard.classList.add('active');
       dom.formSection.classList.add('hidden');
@@ -898,12 +923,42 @@
     }
   }
 
+  /* ---------- Dashboard Password Modal ---------- */
+  function openPasswordModal() {
+    var modal = document.getElementById('passwordModal');
+    var input = document.getElementById('dashboardPasswordInput');
+    if (modal) {
+      input.value = '';
+      modal.classList.remove('hidden');
+      input.focus();
+    }
+  }
+
+  function closePasswordModal() {
+    var modal = document.getElementById('passwordModal');
+    if (modal) {
+      modal.classList.add('hidden');
+    }
+  }
+
+  function handleConfirmPassword() {
+    var input = document.getElementById('dashboardPasswordInput');
+    var password = input ? input.value : '';
+    if (!password) {
+      showToast('Please enter a password', 'warning');
+      return;
+    }
+    loadDashboardData(password);
+  }
+
   /* ---------- Dashboard Controller ---------- */
   var dashboardVisitors = [];
 
-  function loadDashboardData() {
+  function loadDashboardData(verifyPassword) {
     var listContainer = document.getElementById('dashboardVisitorList');
     if (!listContainer) return;
+
+    var passwordToUse = verifyPassword || state.dashboardPassword;
 
     listContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);"><span class="spinner"></span> Loading dashboard queue...</div>';
 
@@ -912,19 +967,41 @@
       return;
     }
 
-    fetch(API_URL + '?action=dashboard', {
+    fetch(API_URL + '?action=dashboard&password=' + encodeURIComponent(passwordToUse), {
       method: 'GET',
       redirect: 'follow'
     })
       .then(function (res) { return res.json(); })
       .then(function (json) {
         if (json.success && json.data) {
+          if (verifyPassword) {
+            state.dashboardPassword = verifyPassword;
+            state.dashboardUnlocked = true;
+            closePasswordModal();
+            // Perform tab switch visually
+            var tabRegister = document.getElementById('tabRegister');
+            var tabDashboard = document.getElementById('tabDashboard');
+            tabRegister.classList.remove('active');
+            tabDashboard.classList.add('active');
+            dom.formSection.classList.add('hidden');
+            document.getElementById('dashboardSection').classList.remove('hidden');
+            dom.successScreen.classList.remove('active');
+            state.currentTab = 'dashboard';
+          }
           dashboardVisitors = json.data.visitors || [];
           updateDashboardStats(json.data.stats || {});
           renderVisitorList(dashboardVisitors);
         } else {
-          showToast('Failed to retrieve dashboard records.', 'error');
-          listContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--danger);">Failed to load dashboard data.</div>';
+          var errMsg = json.message || 'Failed to retrieve dashboard records.';
+          showToast(errMsg, 'error');
+          if (verifyPassword) {
+            listContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--danger);">Enter correct password to unlock dashboard.</div>';
+          } else {
+            state.dashboardUnlocked = false;
+            state.dashboardPassword = '';
+            listContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--danger);">' + escapeHtml(errMsg) + '</div>';
+            openPasswordModal();
+          }
         }
       })
       .catch(function (err) {
@@ -963,33 +1040,33 @@
       else if (statusLower === 'checked out') statusClass = 'status-checked-out';
       else if (statusLower === 'rejected') statusClass = 'status-rejected';
 
-      var photoUrl = visitor.photo || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="%2338bdf8" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
+      var photoUrl = visitor.visitorImage || visitor.photo || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="%2338bdf8" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
 
       var badgeHtml = '<span class="status-badge ' + statusClass + '">' + (visitor.status || 'Waiting') + '</span>';
 
       var actionsHtml = '';
       if (statusLower === 'waiting approval') {
-        actionsHtml = '<button type="button" class="btn btn-primary btn-sm btn-approve" data-id="' + visitor.id + '" style="background: var(--success); border-color: var(--success); font-size: 0.75rem; padding: 4px 8px; margin-right: 4px;">Approve</button>' +
-          '<button type="button" class="btn btn-secondary btn-sm btn-reject" data-id="' + visitor.id + '" style="background: var(--danger); border-color: var(--danger); font-size: 0.75rem; padding: 4px 8px;">Reject</button>';
+        actionsHtml = '<button type="button" class="btn btn-primary btn-sm btn-approve" data-id="' + visitor.visitorId + '" style="background: var(--success); border-color: var(--success); font-size: 0.75rem; padding: 4px 8px; margin-right: 4px;">Approve</button>' +
+          '<button type="button" class="btn btn-secondary btn-sm btn-reject" data-id="' + visitor.visitorId + '" style="background: var(--danger); border-color: var(--danger); font-size: 0.75rem; padding: 4px 8px;">Reject</button>';
       } else if (statusLower === 'approved') {
-        actionsHtml = '<button type="button" class="btn btn-primary btn-sm btn-checkin" data-id="' + visitor.id + '" style="font-size: 0.75rem; padding: 4px 8px;">Check In</button>';
+        actionsHtml = '<button type="button" class="btn btn-primary btn-sm btn-checkin" data-id="' + visitor.visitorId + '" style="font-size: 0.75rem; padding: 4px 8px;">Check In</button>';
       } else if (statusLower === 'inside') {
-        actionsHtml = '<button type="button" class="btn btn-secondary btn-sm btn-checkout" data-id="' + visitor.id + '" style="background: var(--warning); border-color: var(--warning); font-size: 0.75rem; padding: 4px 8px;">Check Out</button>';
+        actionsHtml = '<button type="button" class="btn btn-secondary btn-sm btn-checkout" data-id="' + visitor.visitorId + '" style="background: var(--warning); border-color: var(--warning); font-size: 0.75rem; padding: 4px 8px;">Check Out</button>';
       }
 
       var timeLabel = visitor.checkOutTime ? 'Stay: ' + (visitor.duration || '') : 'Time: ' + (visitor.checkInTime || '');
 
       card.innerHTML =
-        '<div class="visitor-avatar btn-view-history" data-mobile="' + visitor.mobile + '" title="View History">' +
+        '<div class="visitor-avatar btn-view-history" data-mobile="' + visitor.mobileNumber + '" title="View History">' +
         '<img src="' + photoUrl + '" alt="Visitor photo">' +
         '</div>' +
         '<div class="visitor-details">' +
         '<div class="visitor-meta-main">' +
-        '<span class="visitor-meta-name">' + escapeHtml(visitor.name) + '</span>' +
-        '<span class="visitor-meta-sub">' + visitor.mobile + ' | ' + escapeHtml(visitor.company || 'Personal') + '</span>' +
+        '<span class="visitor-meta-name">' + escapeHtml(visitor.visitorName) + '</span>' +
+        '<span class="visitor-meta-sub">' + visitor.mobileNumber + ' | ' + escapeHtml(visitor.company || 'Personal') + '</span>' +
         '</div>' +
         '<div class="visitor-meta-visit">' +
-        '<div>Host: <strong>' + escapeHtml(visitor.host) + '</strong></div>' +
+        '<div>Host: <strong>' + escapeHtml(visitor.hostName) + '</strong></div>' +
         '<div style="font-size:0.75rem; color:var(--text-secondary);">' + timeLabel + '</div>' +
         '</div>' +
         '<div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top: 4px;">' +
@@ -1041,8 +1118,10 @@
     var payload = {
       action: 'status',
       id: id,
+      visitorId: id,
       status: newStatus,
-      remarks: remarks || ''
+      remarks: remarks || '',
+      password: state.dashboardPassword
     };
 
     fetch(API_URL, {
@@ -1100,11 +1179,11 @@
     }
 
     var filtered = dashboardVisitors.filter(function (v) {
-      var name = (v.name || '').toLowerCase();
-      var mobile = (v.mobile || '').toLowerCase();
-      var host = (v.host || '').toLowerCase();
+      var name = (v.visitorName || '').toLowerCase();
+      var mobile = (v.mobileNumber || '').toLowerCase();
+      var host = (v.hostName || '').toLowerCase();
       var company = (v.company || '').toLowerCase();
-      var id = (v.id || '').toLowerCase();
+      var id = (v.visitorId || '').toLowerCase();
       return name.indexOf(query) !== -1 ||
         mobile.indexOf(query) !== -1 ||
         host.indexOf(query) !== -1 ||
@@ -1138,7 +1217,7 @@
       return;
     }
 
-    fetch(API_URL + '?action=history&mobile=' + mobile, {
+    fetch(API_URL + '?action=history&mobile=' + mobile + '&password=' + encodeURIComponent(state.dashboardPassword), {
       method: 'GET',
       redirect: 'follow'
     })

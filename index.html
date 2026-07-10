@@ -367,6 +367,24 @@
     </div>
   </div>
 
+  <!-- ===== Dashboard Password Modal ===== -->
+  <div class="modal-overlay hidden" id="passwordModal">
+    <div class="modal-container" style="max-width: 360px;">
+      <div class="modal-header">Dashboard Access</div>
+      <div style="margin-bottom: 16px; font-size: 0.875rem; color: var(--text-secondary); text-align: center;">
+        Please enter the dashboard access password to view today's visitor statistics and queue.
+      </div>
+      <div class="form-group">
+        <label for="dashboardPasswordInput">Access Password</label>
+        <input type="password" id="dashboardPasswordInput" class="form-control" placeholder="Enter password" style="text-align: center;">
+      </div>
+      <div class="modal-footer" style="justify-content: center; gap: 12px; margin-top: 16px;">
+        <button type="button" id="btnCancelPassword" class="btn btn-secondary">Cancel</button>
+        <button type="button" id="btnConfirmPassword" class="btn btn-primary">Unlock</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== Visitor History Drawer ===== -->
   <div class="drawer-overlay hidden" id="historyDrawerOverlay"></div>
   <div class="drawer-container hidden" id="historyDrawer">
