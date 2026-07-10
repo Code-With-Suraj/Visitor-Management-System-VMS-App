@@ -10,7 +10,7 @@
   /* ==========================================================
      CONFIGURATION
      ========================================================== */
-  var API_URL = 'https://script.google.com/macros/s/AKfycbwXYmbSekOo59rTCKdOGWs8Qs-T-asjWbPjaEd7BkpZsOo-wqGxMOPdl6OnGddHk3I/exec';
+  var API_URL = 'https://script.google.com/macros/s/AKfycbzZCpyASFtsPucopKl7XC_K4n1hECMgeap1tSAV98xjF5ZLYMbLTVU9oT5neJkVpMgM/exec';
 
   /* ---------- State ---------- */
   var state = {
@@ -28,7 +28,8 @@
     currentPage: 1,
     itemsPerPage: 10,
     filteredVisitors: [],
-    isAutoFilled: false
+    isAutoFilled: false,
+    registrationUrl: ''
   };
 
   /* ---------- DOM References ---------- */
@@ -66,7 +67,6 @@
     dom.successVisitorId = document.getElementById('successVisitorId');
     dom.successHostName = document.getElementById('successHostName');
     dom.successTime = document.getElementById('successTime');
-    dom.btnWhatsApp = document.getElementById('btnWhatsApp');
     dom.btnNewVisitor = document.getElementById('btnNewVisitor');
 
     dom.hostSkeleton = document.getElementById('hostSkeleton');
@@ -830,6 +830,7 @@
       .then(function (json) {
         if (json.success && json.data && json.data.hosts) {
           state.hosts = json.data.hosts;
+          state.registrationUrl = json.data.registrationUrl || API_URL;
           populateHostDropdown(json.data.hosts);
 
           // Apply dynamic white-label branding
@@ -1100,35 +1101,6 @@
       successName.textContent = dom.visitorName.value.trim() || 'Visitor';
     }
 
-    /* Construct professional WhatsApp notification with Approve / Reject deep links */
-    var hostMobile = data.hostMobile || '';
-    if (hostMobile) {
-      var visitorName = dom.visitorName.value.trim();
-      var companyText = dom.company.value.trim();
-      var purposeText = dom.purpose.value.trim();
-      var visitorId = data.visitorId || '';
-
-      var approveUrl = API_URL + '?action=approve&id=' + encodeURIComponent(visitorId);
-      var rejectUrl = API_URL + '?action=reject&id=' + encodeURIComponent(visitorId);
-
-      var message = '🏢 *Visitor Approval Request*\n'
-        + '━━━━━━━━━━━━━━━━━━━━━\n'
-        + '👤 *Name:* ' + visitorName + '\n'
-        + '🏭 *Company:* ' + companyText + '\n'
-        + '📋 *Purpose:* ' + purposeText + '\n'
-        + '🆔 *Visitor ID:* ' + visitorId + '\n'
-        + '━━━━━━━━━━━━━━━━━━━━━\n\n'
-        + '✅ *Approve:*\n' + approveUrl + '\n\n'
-        + '❌ *Reject:*\n' + rejectUrl + '\n\n'
-        + '_Powered by VisitorSarthi_';
-
-      var waUrl = 'https://wa.me/91' + hostMobile + '?text=' + encodeURIComponent(message);
-      dom.btnWhatsApp.href = waUrl;
-      dom.btnWhatsApp.classList.remove('hidden');
-    } else {
-      dom.btnWhatsApp.classList.add('hidden');
-    }
-
     stopCamera();
     stopIdCardCamera();
   }
@@ -1355,7 +1327,32 @@
 
       var actionsHtml = '';
       if (statusLower === 'waiting approval') {
-        actionsHtml = '<button type="button" class="btn btn-approve" data-id="' + visitor.visitorId + '">Approve</button>' +
+        var visitorName = visitor.visitorName || '';
+        var companyText = visitor.company || 'Personal';
+        var purposeText = visitor.purpose || '';
+        var visitorId = visitor.visitorId || '';
+        var hostMobile = visitor.hostMobile || '';
+
+        var approveUrl = API_URL + '?action=approve&id=' + encodeURIComponent(visitorId);
+        var rejectUrl = API_URL + '?action=reject&id=' + encodeURIComponent(visitorId);
+
+        var message = '🏢 *Visitor Approval Request*\n'
+          + '━━━━━━━━━━━━━━━━━━━━━\n'
+          + '👤 *Name:* ' + visitorName + '\n'
+          + '🏭 *Company:* ' + companyText + '\n'
+          + '📋 *Purpose:* ' + purposeText + '\n'
+          + '🆔 *Visitor ID:* ' + visitorId + '\n'
+          + '━━━━━━━━━━━━━━━━━━━━━\n\n'
+          + '✅ *Approve:*\n' + approveUrl + '\n\n'
+          + '❌ *Reject:*\n' + rejectUrl + '\n\n'
+          + '_Powered by VisitorSarthi_';
+
+        var waUrl = hostMobile ? 'https://wa.me/91' + hostMobile + '?text=' + encodeURIComponent(message) : '#';
+        var waTarget = hostMobile ? 'target="_blank" rel="noopener"' : '';
+        var waClass = hostMobile ? 'btn btn-whatsapp' : 'btn btn-whatsapp disabled';
+
+        actionsHtml = '<a href="' + waUrl + '" ' + waTarget + ' class="' + waClass + '" style="font-size:0.75rem !important; padding:6px 12px !important; border-radius:var(--radius-sm); text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-weight:600;">💬 Notify</a>' +
+          '<button type="button" class="btn btn-approve" data-id="' + visitor.visitorId + '">Approve</button>' +
           '<button type="button" class="btn btn-reject" data-id="' + visitor.visitorId + '">Reject</button>';
       } else if (statusLower === 'approved') {
         actionsHtml = '<button type="button" class="btn btn-checkin" data-id="' + visitor.visitorId + '">Check In</button>';
@@ -1737,7 +1734,7 @@
     var qrImg = document.getElementById('qrCodeImage');
     if (!modal || !qrImg) return;
 
-    var registrationUrl = API_URL;
+    var registrationUrl = state.registrationUrl || API_URL;
     var qrApiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&color=38bdf8&bgcolor=0b1326&data=' + encodeURIComponent(registrationUrl);
     qrImg.src = qrApiUrl;
     modal.classList.remove('hidden');
