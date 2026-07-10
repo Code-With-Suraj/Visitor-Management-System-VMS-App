@@ -353,13 +353,39 @@ textarea.form-control {
   text-decoration: none;
   line-height: 1;
   white-space: nowrap;
+  position: relative;
+  overflow: hidden;
 }
 
-.btn:active { transform: scale(0.97); }
+.btn:active {
+  transform: scale(0.96) !important;
+}
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
+  transform: none !important;
+}
+
+.btn-loading {
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+/* Dynamic Click Ripple Effect */
+.click-ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  background: rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+  animation: ripple-animation 0.6s cubic-bezier(0.1, 0.8, 0.3, 1);
+}
+
+@keyframes ripple-animation {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
 }
 
 .btn-primary {
@@ -970,10 +996,26 @@ textarea.form-control {
   border-radius: var(--radius-md);
   padding: 14px;
   text-align: center;
-  transition: var(--transition);
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), border-color 0.3s ease, box-shadow 0.3s ease;
 }
 .stat-card:hover {
-  border-color: rgba(56, 189, 248, 0.25);
+  transform: translateY(-3px);
+}
+.stat-card.blue:hover {
+  border-color: var(--primary);
+  box-shadow: 0 8px 24px rgba(56, 189, 248, 0.2);
+}
+.stat-card.green:hover {
+  border-color: var(--success);
+  box-shadow: 0 8px 24px rgba(82, 232, 124, 0.2);
+}
+.stat-card.orange:hover {
+  border-color: var(--warning);
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.2);
+}
+.stat-card.red:hover {
+  border-color: var(--danger);
+  box-shadow: 0 8px 24px rgba(255, 180, 171, 0.2);
 }
 .stat-number {
   font-family: var(--font-mono);
@@ -1023,11 +1065,19 @@ textarea.form-control {
   display: flex;
   gap: 16px;
   align-items: center;
-  transition: var(--transition);
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
 }
 .visitor-item-card:hover {
-  border-color: rgba(56, 189, 248, 0.25);
-  background: rgba(23, 31, 51, 0.6);
+  border-color: rgba(56, 189, 248, 0.35);
+  background: rgba(23, 31, 51, 0.65);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 0 15px rgba(56, 189, 248, 0.05);
+}
+.visitor-item-card.removing {
+  opacity: 0;
+  transform: scale(0.9) translateY(-10px);
+  filter: blur(4px);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .visitor-avatar {
   width: 52px;
@@ -1117,6 +1167,61 @@ textarea.form-control {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+}
+.visitor-item-actions .btn {
+  font-size: 0.75rem !important;
+  padding: 6px 12px !important;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: none;
+}
+.visitor-item-actions .btn:hover {
+  box-shadow: none;
+}
+.visitor-item-actions .btn-approve {
+  background: rgba(82, 232, 124, 0.15) !important;
+  color: var(--success) !important;
+  border-color: rgba(82, 232, 124, 0.3) !important;
+}
+.visitor-item-actions .btn-approve:hover:not(:disabled) {
+  background: var(--success) !important;
+  color: #003915 !important;
+  box-shadow: 0 4px 12px rgba(82, 232, 124, 0.3) !important;
+  transform: translateY(-1px) !important;
+}
+.visitor-item-actions .btn-reject {
+  background: rgba(255, 180, 171, 0.1) !important;
+  color: var(--danger) !important;
+  border-color: rgba(255, 180, 171, 0.2) !important;
+}
+.visitor-item-actions .btn-reject:hover:not(:disabled) {
+  background: #ffb4ab !important;
+  color: #560004 !important;
+  box-shadow: 0 4px 12px rgba(255, 180, 171, 0.3) !important;
+  transform: translateY(-1px) !important;
+}
+.visitor-item-actions .btn-checkin {
+  background: rgba(56, 189, 248, 0.15) !important;
+  color: var(--primary) !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+}
+.visitor-item-actions .btn-checkin:hover:not(:disabled) {
+  background: var(--primary) !important;
+  color: #060e20 !important;
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3) !important;
+  transform: translateY(-1px) !important;
+}
+.visitor-item-actions .btn-checkout {
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: var(--warning) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+.visitor-item-actions .btn-checkout:hover:not(:disabled) {
+  background: var(--warning) !important;
+  color: #3e2600 !important;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3) !important;
+  transform: translateY(-1px) !important;
 }
 
 /* ---------- Remarks Modal ---------- */

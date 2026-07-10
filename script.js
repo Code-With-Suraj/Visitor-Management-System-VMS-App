@@ -10,7 +10,7 @@
   /* ==========================================================
      CONFIGURATION
      ========================================================== */
-  var API_URL = 'https://script.google.com/macros/s/AKfycbw7tjv4t22G9QDdZLKKa37CJk4BVkY4gWjngVJt40svKpjNtj7arKy3WLbfCNrGMjgz/exec';
+  var API_URL = 'https://script.google.com/macros/s/AKfycbwCXYdO9qCAwRKqL2Obgjvdh7Y3QKhEXs5pisOZyFS37AH-84paf3Tho5XxVShMZoBw/exec';
 
   /* ---------- State ---------- */
   var state = {
@@ -130,6 +130,108 @@
     request.onsuccess = function () {
       if (callback) callback();
     };
+  }
+
+  /* ---------- Professional Click Ripple & Button Loaders ---------- */
+
+  // Dynamic Ripple Effect delegation
+  document.body.addEventListener('click', function (e) {
+    var target = e.target.closest('.btn, .tab-button, .pagination-controls button, .visitor-avatar, .drawer-close');
+    if (!target) return;
+    if (target.disabled || target.classList.contains('disabled')) return;
+
+    var ripple = document.createElement('span');
+    ripple.className = 'click-ripple';
+
+    var rect = target.getBoundingClientRect();
+    var size = Math.max(rect.width, rect.height);
+
+    ripple.style.width = ripple.style.height = size + 'px';
+
+    var x = e.clientX - rect.left - size / 2;
+    var y = e.clientY - rect.top - size / 2;
+    ripple.style.left = x + 'px';
+    ripple.style.top = y + 'px';
+
+    target.appendChild(ripple);
+
+    ripple.addEventListener('animationend', function () {
+      ripple.remove();
+    });
+  });
+
+  function setButtonLoading(btn, isLoading) {
+    if (!btn) return;
+    if (isLoading) {
+      btn.disabled = true;
+      btn.classList.add('btn-loading');
+      btn.dataset.originalHtml = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner" style="width: 14px; height: 14px; border-width: 1.5px; border-top-color: currentColor; margin-right: 0;"></span>';
+    } else {
+      btn.disabled = false;
+      btn.classList.remove('btn-loading');
+      if (btn.dataset.originalHtml) {
+        btn.innerHTML = btn.dataset.originalHtml;
+      }
+    }
+  }
+
+  function setActionsLoading(actionsContainer, clickedBtn, isLoading) {
+    if (!actionsContainer) return;
+    var buttons = actionsContainer.querySelectorAll('button');
+    buttons.forEach(function (btn) {
+      if (isLoading) {
+        btn.disabled = true;
+        if (btn === clickedBtn) {
+          btn.classList.add('btn-loading');
+          btn.dataset.originalHtml = btn.innerHTML;
+          btn.innerHTML = '<span class="spinner" style="width: 12px; height: 12px; border-width: 1.5px; border-top-color: currentColor; margin-right: 0;"></span>';
+        }
+      } else {
+        btn.disabled = false;
+        if (btn.classList.contains('btn-loading')) {
+          btn.classList.remove('btn-loading');
+          if (btn.dataset.originalHtml) {
+            btn.innerHTML = btn.dataset.originalHtml;
+          }
+        }
+      }
+    });
+  }
+
+  function formatVisitDateTime(dateVal) {
+    if (!dateVal) return '—';
+    var d = dateVal;
+    if (typeof dateVal === 'string') {
+      var cleanStr = dateVal.trim();
+      if (cleanStr.length === 19 && cleanStr.charAt(10) === ' ') {
+        cleanStr = cleanStr.substring(0, 10) + 'T' + cleanStr.substring(11);
+      }
+      d = new Date(cleanStr);
+    } else {
+      d = new Date(dateVal);
+    }
+
+    if (isNaN(d.getTime())) {
+      return dateVal;
+    }
+
+    var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    var dayName = days[d.getDay()];
+    var day = d.getDate();
+    var monthName = months[d.getMonth()];
+    var year = d.getFullYear();
+
+    var hours = d.getHours();
+    var minutes = d.getMinutes();
+    var ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    minutes = minutes < 10 ? '0' + minutes : minutes;
+
+    return dayName + ' ,' + day + ' ' + monthName + ' ' + year + ' ' + hours + ':' + minutes + ' ' + ampm;
   }
 
   /* ---------- Initialization ---------- */
@@ -951,6 +1053,8 @@
       showToast('Please enter a password', 'warning');
       return;
     }
+    var unlockBtn = document.getElementById('btnConfirmPassword');
+    setButtonLoading(unlockBtn, true);
     loadDashboardData(password);
   }
 
@@ -967,6 +1071,8 @@
 
     if (!navigator.onLine) {
       listContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--warning);">⚠️ Dashboard queue requires an active network.</div>';
+      var unlockBtn = document.getElementById('btnConfirmPassword');
+      if (unlockBtn) setButtonLoading(unlockBtn, false);
       return;
     }
 
@@ -1012,6 +1118,10 @@
       .catch(function (err) {
         console.error('Dashboard load error:', err);
         listContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--danger);">Network error loading live queue.</div>';
+      })
+      .finally(function () {
+        var unlockBtn = document.getElementById('btnConfirmPassword');
+        if (unlockBtn) setButtonLoading(unlockBtn, false);
       });
   }
 
@@ -1062,15 +1172,22 @@
 
       var actionsHtml = '';
       if (statusLower === 'waiting approval') {
-        actionsHtml = '<button type="button" class="btn btn-primary btn-sm btn-approve" data-id="' + visitor.visitorId + '" style="background: var(--success); border-color: var(--success); font-size: 0.75rem; padding: 4px 8px; margin-right: 4px;">Approve</button>' +
-          '<button type="button" class="btn btn-secondary btn-sm btn-reject" data-id="' + visitor.visitorId + '" style="background: var(--danger); border-color: var(--danger); font-size: 0.75rem; padding: 4px 8px;">Reject</button>';
+        actionsHtml = '<button type="button" class="btn btn-approve" data-id="' + visitor.visitorId + '">Approve</button>' +
+          '<button type="button" class="btn btn-reject" data-id="' + visitor.visitorId + '">Reject</button>';
       } else if (statusLower === 'approved') {
-        actionsHtml = '<button type="button" class="btn btn-primary btn-sm btn-checkin" data-id="' + visitor.visitorId + '" style="font-size: 0.75rem; padding: 4px 8px;">Check In</button>';
+        actionsHtml = '<button type="button" class="btn btn-checkin" data-id="' + visitor.visitorId + '">Check In</button>';
       } else if (statusLower === 'inside') {
-        actionsHtml = '<button type="button" class="btn btn-secondary btn-sm btn-checkout" data-id="' + visitor.visitorId + '" style="background: var(--warning); border-color: var(--warning); font-size: 0.75rem; padding: 4px 8px;">Check Out</button>';
+        actionsHtml = '<button type="button" class="btn btn-checkout" data-id="' + visitor.visitorId + '">Check Out</button>';
       }
 
-      var timeLabel = visitor.checkOutTime ? 'Stay: ' + (visitor.duration || '') : 'Time: ' + (visitor.checkInTime || '');
+      var displayTime = visitor.checkInTime || visitor.timestamp || '';
+      var formattedTime = formatVisitDateTime(displayTime);
+      var timeLabel = '';
+      if (statusLower === 'checked out') {
+        timeLabel = 'Time: ' + formattedTime + ' (Stay: ' + (visitor.duration || '—') + ')';
+      } else {
+        timeLabel = 'Time: ' + formattedTime;
+      }
 
       card.innerHTML =
         '<div class="visitor-avatar btn-view-history" data-mobile="' + visitor.mobileNumber + '" title="View History">' +
@@ -1122,23 +1239,35 @@
 
     listContainer.querySelectorAll('.btn-approve').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
-        updateStatus(e.target.getAttribute('data-id'), 'Approved');
+        var clickedBtn = e.target.closest('button');
+        if (clickedBtn) {
+          updateStatus(clickedBtn.getAttribute('data-id'), 'Approved', null, clickedBtn);
+        }
       });
     });
     listContainer.querySelectorAll('.btn-reject').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
-        updateStatus(e.target.getAttribute('data-id'), 'Rejected');
+        var clickedBtn = e.target.closest('button');
+        if (clickedBtn) {
+          updateStatus(clickedBtn.getAttribute('data-id'), 'Rejected', null, clickedBtn);
+        }
       });
     });
     listContainer.querySelectorAll('.btn-checkin').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
-        updateStatus(e.target.getAttribute('data-id'), 'Inside');
+        var clickedBtn = e.target.closest('button');
+        if (clickedBtn) {
+          updateStatus(clickedBtn.getAttribute('data-id'), 'Inside', null, clickedBtn);
+        }
       });
     });
     listContainer.querySelectorAll('.btn-checkout').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
-        state.pendingCheckoutId = e.target.getAttribute('data-id');
-        openRemarksModal();
+        var clickedBtn = e.target.closest('button');
+        if (clickedBtn) {
+          state.pendingCheckoutId = clickedBtn.getAttribute('data-id');
+          openRemarksModal();
+        }
       });
     });
     listContainer.querySelectorAll('.btn-view-history').forEach(function (el) {
@@ -1151,10 +1280,17 @@
     });
   }
 
-  function updateStatus(id, newStatus, remarks) {
+  function updateStatus(id, newStatus, remarks, clickedBtn) {
     if (!navigator.onLine) {
       showToast('Action requires connection.', 'error');
       return;
+    }
+
+    var actionsContainer = clickedBtn ? clickedBtn.closest('.visitor-item-actions') : null;
+    if (actionsContainer && clickedBtn) {
+      setActionsLoading(actionsContainer, clickedBtn, true);
+    } else if (clickedBtn) {
+      setButtonLoading(clickedBtn, true);
     }
 
     var payload = {
@@ -1176,14 +1312,32 @@
       .then(function (json) {
         if (json.success) {
           showToast('Visitor status updated to ' + newStatus, 'success');
-          loadDashboardData();
+          var card = clickedBtn ? clickedBtn.closest('.visitor-item-card') : null;
+          if (card) {
+            card.classList.add('removing');
+            setTimeout(function () {
+              loadDashboardData();
+            }, 400);
+          } else {
+            loadDashboardData();
+          }
         } else {
           showToast('Update failed: ' + json.message, 'error');
+          if (actionsContainer && clickedBtn) {
+            setActionsLoading(actionsContainer, clickedBtn, false);
+          } else if (clickedBtn) {
+            setButtonLoading(clickedBtn, false);
+          }
         }
       })
       .catch(function (err) {
         console.error('Update status error:', err);
         showToast('Network error updating state.', 'error');
+        if (actionsContainer && clickedBtn) {
+          setActionsLoading(actionsContainer, clickedBtn, false);
+        } else if (clickedBtn) {
+          setButtonLoading(clickedBtn, false);
+        }
       });
   }
 
@@ -1207,10 +1361,17 @@
   function handleConfirmCheckout() {
     var remarksInput = document.getElementById('checkoutRemarks');
     var remarks = remarksInput ? remarksInput.value.trim() : '';
+    var confirmBtn = document.getElementById('btnConfirmCheckout');
     if (state.pendingCheckoutId) {
-      updateStatus(state.pendingCheckoutId, 'Checked Out', remarks);
+      var cardBtn = document.querySelector('.btn-checkout[data-id="' + state.pendingCheckoutId + '"]');
+      setButtonLoading(confirmBtn, true);
+      if (cardBtn) {
+        setButtonLoading(cardBtn, true);
+      }
+      updateStatus(state.pendingCheckoutId, 'Checked Out', remarks, cardBtn || confirmBtn);
     }
     closeRemarksModal();
+    setButtonLoading(confirmBtn, false);
   }
 
   function handleDashboardSearch(e) {
