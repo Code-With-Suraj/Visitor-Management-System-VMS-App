@@ -1333,9 +1333,6 @@
         var visitorId = visitor.visitorId || '';
         var hostMobile = visitor.hostMobile || '';
 
-        var approveUrl = API_URL + '?action=approve&id=' + encodeURIComponent(visitorId);
-        var rejectUrl = API_URL + '?action=reject&id=' + encodeURIComponent(visitorId);
-
         var message = '🏢 *Visitor Approval Request*\n'
           + '━━━━━━━━━━━━━━━━━━━━━\n'
           + '👤 *Name:* ' + visitorName + '\n'
@@ -1343,8 +1340,6 @@
           + '📋 *Purpose:* ' + purposeText + '\n'
           + '🆔 *Visitor ID:* ' + visitorId + '\n'
           + '━━━━━━━━━━━━━━━━━━━━━\n\n'
-          + '✅ *Approve:*\n' + approveUrl + '\n\n'
-          + '❌ *Reject:*\n' + rejectUrl + '\n\n'
           + '_Powered by VisitorSarthi_';
 
         var waUrl = hostMobile ? 'https://wa.me/91' + hostMobile + '?text=' + encodeURIComponent(message) : '#';
